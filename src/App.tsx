@@ -7,8 +7,10 @@ import { z } from 'zod'
 import { cn } from './lib/utils'
 import { Hero } from './components/custom/hero'
 import { BentoMinimalTiptap } from './components/custom/types'
-import type { Editor } from '@tiptap/react'
-import { useCallback, useRef } from 'react'
+import { Editor, EditorContent, useEditor } from '@tiptap/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { StarterKit } from '@tiptap/starter-kit'
+import { createExtensions } from '@/components/minimal-tiptap/hooks/use-minimal-tiptap.ts'
 
 export default function App() {
   return (
@@ -18,6 +20,7 @@ export default function App() {
         <div className="mt-12 flex flex-col gap-12 sm:mt-20">
           {/*<BentoMinimalTiptap />*/}
            <ExampleForm />
+           <ExampleForm2 />
         </div>
       </main>
     </div>
@@ -33,6 +36,47 @@ const formSchema = z.object({
 })
 
 type FormValues = z.infer<typeof formSchema>
+
+export const ExampleForm2: React.FC = () => {
+  const [editable, setEditable] = useState(false)
+  const editor = useEditor({
+    shouldRerenderOnTransaction: false,
+    editable,
+    content: `
+        <h1 class="heading-node">Hellloooo</h1><h3 class="heading-node">heading 3</h3><p class="text-node"></p><p class="text-node"></p><p class="text-node"><span>aaaaa</span><br><br><span><strong><em><s><u>aa</u></s></em></strong></span><br><br><span style="color: var(--mt-accent-red)"><strong><em><s><u>aaaaa</u></s></em></strong></span><br><br><br><code class="inline" spellcheck="false">aaaaaaaaa</code></p>
+      `,
+    extensions: createExtensions(''),
+  })
+
+  useEffect(() => {
+    if (!editor) {
+      return undefined
+    }
+
+    editor.setEditable(editable)
+  }, [editor, editable])
+
+  if (!editor) {
+    return null
+  }
+
+  return (
+    <>
+      <div className="control-group">
+        <div className="button-group">
+          <input
+            type="checkbox"
+            id="editable"
+            value={editable}
+            onChange={event => setEditable(event.target.checked)}
+          />
+          <label htmlFor="editable">Editable</label>
+        </div>
+      </div>
+      <EditorContent editor={editor} />
+    </>
+  )
+}
 
 export const ExampleForm: React.FC = () => {
   const editorRef = useRef<Editor | null>(null)
@@ -56,6 +100,8 @@ export const ExampleForm: React.FC = () => {
   const onSubmit = (values: FormValues) => {
     console.log('==Getting values from form==')
     console.log(editorRef.current?.getHTML())
+    console.log("Posting Message")
+    window.parent.postMessage(editorRef.current?.getHTML(), "https://wordweft.wixstudio.com/");
     console.log('Success: Values retrieved from form')
 
     setTimeout(() => {
@@ -106,7 +152,7 @@ export const ExampleForm: React.FC = () => {
                   autofocus={true}
                   immediatelyRender={true}
                   editable={true}
-                  injectCSS={true}
+                  injectCSS={false}
                   editorClassName="focus:outline-none p-5"
                 />
               </FormControl>
